@@ -1,0 +1,38 @@
+#!/usr/bin/env python
+from bs4 import BeautifulSoup as soup
+import requests
+from sys import argv
+
+def odysee(pagesoup:soup,url:str) -> str:
+    odysee_channel_name = url.split('@')[1].split(':')[0].capitalize()
+    return f'{odysee_channel_name} - {pagesoup.find("title").text}\n'
+
+def ytb_to_yew(url:str) -> str:
+    url = url.split('/')[-1]
+    return f'https://yewtu.be/{url}'
+
+def yewtube(pagesoup:soup) -> str:
+    return f'{pagesoup.find(id="channel-name").text.capitalize()} - {pagesoup.find(property="og:title")["content"]}\n'
+
+def make_soup(url):
+    if 'odysee' in url:
+        return odysee(soup(requests.get(url.rstrip()).content,'lxml'),url)
+    elif 'videos' in url:
+        return soup(requests.get(url.rstrip()).content,'lxml').title.text
+    elif 'youtu' in url:
+        url = ytb_to_yew(url)
+    return yewtube(soup(requests.get(url.rstrip()).content,'lxml'))
+
+
+if __name__ == '__main__':
+
+    #print(make_soup('https://youtu.be/_eJERvFTiJQ'))
+    with open('.local/share/playlist-titles','a') as fh:
+        fh.write(make_soup(argv[1]))
+
+
+
+
+
+
+
