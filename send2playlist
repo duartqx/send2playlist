@@ -1,38 +1,104 @@
-#!/usr/bin/env python
-from bs4 import BeautifulSoup as soup
-import requests
+#!/usr/bin/env python3
+
 from sys import argv
+from subprocess import Popen,PIPE
 
-def odysee(pagesoup:soup,url:str) -> str:
-    odysee_channel_name = url.split('@')[1].split(':')[0].capitalize()
-    return f'{odysee_channel_name} - {pagesoup.find("title").text}\n'
+def get_lynx(url:str) -> list:
+    '''Sends the url:str to the terminal web browser lynx(1) using subprocess
+    Popen and PIPE and returns a list of byte strings encoded in ISO-8859-1 
+    (I've used the chardet module to get the right encoding), with the contents
+    of the url as seen by the browser. 
+    Since the lynx browser doesn't have javascript it only receives a small 
+    part of the page, but so far it is enough to get the title of the video'''
+    return Popen(f'lynx -dump {url}',shell=True,stdout=PIPE).stdout.readlines()
 
-def ytb_to_yew(url:str) -> str:
-    url = url.split('/')[-1]
-    return f'https://yewtu.be/{url}'
+def youtube_title(url:str) -> str:
+    '''Sends the url:str to the get_lynx function and with the list it returns
+    this function builds the proper title using the link numbers as markers
+    All tests resulted in links [5],[6] and [7] as the right markers, but it
+    can change in the future or an url may have something different
+    Sometimes in the test some part of the video title was on [6] link and
+    the other half on link [7], sometimes it was all at the [6], it varied a
+    lot. So this function makes sure to parse all text after "[6]" and before 
+    "[7]" that is separated in the get_lynx list to build the right title for 
+    youtube videos'''
+    lynx_got = get_lynx(url)[:3] 
+    # Keeps only the first three items of get_lynx to avoid a big for loop
+    # on the next step, on tests this was proven to be enough to get all parts 
+    # of the youtube's video title
+    title = ''
+    for i in lynx_got:
 
-def yewtube(pagesoup:soup) -> str:
-    return f'{pagesoup.find(id="channel-name").text.capitalize()} - {pagesoup.find(property="og:title")["content"]}\n'
+        i = i.decode('ISO-8859-1').strip()
 
-def make_soup(url):
-    if 'odysee' in url:
-        return odysee(soup(requests.get(url.rstrip()).content,'lxml'),url)
-    elif 'videos' in url:
-        return soup(requests.get(url.rstrip()).content,'lxml').title.text
-    elif 'youtu' in url:
-        url = ytb_to_yew(url)
-    return yewtube(soup(requests.get(url.rstrip()).content,'lxml'))
+        if '[5]' in i and '[6]' not in i:
+            # There is no part of the title on this item, so it continues to 
+            # the next i on lynx_got
+            continue
+        elif ('[6]' and '[7]') in i:
+            # If this is true, all the title is in this one item and it needs
+            # to keep only the content after the [6] and before the [7]
+            i = i.split('[6]')[-1]
+            title += i[:i.find('[7]')] + ' '
+        elif '[6]' in i:
+            # Gets all text after [6]
+            title += i.split('[6]')[-1] + ' '
+        elif '[7]' in i:
+            # If there is text before [7] it keeps, otherwise it will only
+            # append a space.
+            # The text right after [7] is generally a repeat of the title, but
+            # sometimes incomplete
+            title += i.split('[7]')[0] + ' '
+        elif i not in title: 
+            # If i doesn't have any link marker, but has content and is not a
+            # repeat (Most of the time the title repeats itself on link [7])
+            # so it appends it to the title string
+            title += i + ' '
+    return title.strip()
 
+def yewtube_to_youtube(url:str) -> str:
+    '''Since I already had a youtube function I just made this simple trans-
+    lation for yewtu.be links It gets the url:str and returns it converted 
+    to a youtube.com url
+    Maybe getting the title from an yewtu.be link would be easier than getting
+    it from a youtube.com, but I haven't tested this yet'''
+    return f'https://youtube.com/{url.split("/")[-1]}'
+
+def odysee(url:str) -> str:
+    '''Similar to the youtube_title function, but on odysee links the title is
+    much much simple to get, and it was always completely on link [1], but
+    sometimes also repeated on link [2], so this function just decodes from 
+    ISO-8859-1 and makes sure the title doesnt repeats'''
+    title = get_lynx(url)[0].split(b'[1]')[1].decode('ISO-8859-1').strip()
+    if '[2]' in title:
+        return title[:title.find('[2]')]
+    return title
+
+def mgtowtv(url:str) -> str:
+    '''Most mgtow.tv videos have the full title in the url, so it it directly
+    parsed instead of sending it to lynx'''
+    return ' '.join(url.split('/')[-1].split('-')).capitalize().split('_')[0]
 
 if __name__ == '__main__':
 
-    #print(make_soup('https://youtu.be/_eJERvFTiJQ'))
-    with open('.local/share/playlist-titles','a') as fh:
-        fh.write(make_soup(argv[1]))
-
-
-
-
-
-
-
+    with open('.local/share/playlist','a') as fh:
+        if 'yewtu.be' in argv[1]:
+            # If argv[1] is an yewtu.be link send it to yewtube_to_youtube 
+            # function to be converted to an youtube.com url
+            # and then writes the title and url to the playlist file
+            url = yewtube_to_youtube(argv[1]) 
+            fh.write(f'{youtube_title(url)} - {url}\n')
+        elif 'youtu' in argv[1]:
+            # If it's an youtube.com link, just send it to youtube_title 
+            # function and writes the title and url to the playlist file
+            fh.write(f'{youtube_title(argv[1])} - {argv[1]}\n')
+        elif 'odysee' in argv[1]:
+            # If it's an odysee url, send it to the odysee function and writes
+            # to the playlist file
+            fh.write(f'{odysee(argv[1])} - {argv[1]}\n')
+        elif 'mgtow.tv' in argv[1]:
+            fh.write(f'{mgtowtv(argv[1])} - {argv[1]}\n')
+        else:
+            # If it's not youtube, yewtube or odysee url, it just writes it
+            # to the playlist file without a title
+            fh.write(f'{argv[1]}\n')
