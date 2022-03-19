@@ -1,21 +1,37 @@
 #!/usr/bin/env python3
 
 import sys
-from re import search,sub,IGNORECASE
 from requests import get
+from re import search,sub,IGNORECASE
+
+PLAYLIST_FILE='~/.local/share/playlist'
+# The playlist file to be appended with open()
 
 def get_title(url:str) -> str:
-    ''' Sending the url to a get command from the requests module and parsing it's content through a regex search from the re module we find the title  '''
-    content = get(url)
-    content.encoding = 'utf-8'
-    # The previous line tries to fix the encoding from 'ISO-8859-1' to 'utf-8', otherwise quotes/apostrophes and double quotes on titles would show up wrong, for example &#39 for a single quote, for some reason this is still not quite right
-    return search('<\W*title\W*(.*)</title', content.text, IGNORECASE).group(1)
+    ''' Sending the url to a requests.get comman and searching the response's
+    content with re.search we find the title  '''
+    content = get(url).text
+    return search('<\W*title\W*(.*)</title', content, IGNORECASE).group(1)
 
 def yewtube_to_youtube(url:str) -> str:
+    ''' Converts yewtu.be url to youtube.com url to avoid any connection pro-
+    blem that yewtube might have on a random day .
+    Yewtu.be is an invidious instance, basically an alternative open source
+    front end to youtube.com. Anyone can host their own instance of invidious,
+    and many do.
+    This function can be used with any other invidious instances other than 
+    yewtu.be, but the original url must end in a valid youtube's url
+    '''
     return f'https://youtube.com/{url.split("/")[-1]}'
 
 def clean_title(url:str) -> str:
-    '''Cleans the title from bad decoding'''
+    ''' requests.get from google sites returns html with bad encoding in 
+    ISO-8859-1. So characters like ' and " are shown as &#39; and &quot;
+    I haven't found a solution to force the right utf-8 encoding so for now 
+    the script substitutes those two problems with their right character, 
+    using re.sub. Since a title can have simutaniously ' and ", the script 
+    uses two if statements instead of one if and one elif.
+    '''
     if '&#39;' in url:
         url:str = sub('&#39;','\'',url)
     if '&quot;' in url:
@@ -31,19 +47,32 @@ if __name__ == '__main__':
         url:str = yewtube_to_youtube(url)
 
     # Get's the title
-    title = clean_title(get_title(url))
+    title = get_title(url)
+    # Cleans it from bad encoding, if any
+    title = clean_title(title)
 
     if title.endswith('- YouTube'):
-        # All youtube titles have the '- Youtube' suffix, so this conditional simply cleans it
+        # All youtube titles have '- Youtube' as a suffix, using find to get 
+        # the index of were the suffix is and with it slicing the string 
+        # we clean the titles from it
         title = title[:title.find('- YouTube')]
    
-    # First checks if the title is not just 'Youtube'
-    # (If it is just 'Youtube' it means the video had a problem, like a url still marked as premiere or a live stream link to youtube that hasn't started yet. So these kinds of links would fail silently and just send a 'Youtube' as their title)
-    # only after this check the title and url are written to the playlist file
-
     if title != 'YouTube':
-        with open('.local/share/playlist','a') as fh:
-            # Writes title + url + newline to the playlist file
+    # First checks if the title is not just 'Youtube'
+    # (If it is just 'Youtube' it means the video had a problem, like a url 
+    # still marked as premiere or a live stream link to youtube that hasn't 
+    # started yet. So these kinds of links would fail silently and just send a 
+    # 'Youtube' as their title)
+    # only after this check the title and url is written to the playlist file
+
+        with open(PLAYLIST_FILE,'a') as fh:
+            # Appends title + url + newline to the playlist file
+            # If the file doens't exists open() with the 'a' arg creates and 
+            # writes the new file, if it exists open() + fh.write appends the 
+            # title + url to the end of the file
             fh.write(f'{title} - {url}\n')
     else:
+        # Exists with return value of 1 so that it can be captured by bash and
+        # the script send2notify executes the notification of an error, or 
+        # success if the url and title were appended to the playlist file
         sys.exit(1)
