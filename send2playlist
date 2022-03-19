@@ -17,7 +17,7 @@ def yewtube_to_youtube(url:str) -> str:
 def clean_title(url:str) -> str:
     '''Cleans the title from bad decoding'''
     if '&#39;' in url:
-        url:str = sub('&#39','\'',url)
+        url:str = sub('&#39;','\'',url)
     if '&quot;' in url:
         url:str = sub('&quot;','\'',url)
     return url
