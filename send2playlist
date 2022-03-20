@@ -4,7 +4,7 @@ import sys
 from requests import get
 from re import search,sub,IGNORECASE
 
-PLAYLIST_FILE='~/.local/share/playlist'
+PLAYLIST_FILE='.local/share/playlist'
 # The playlist file to be appended with open()
 
 def get_title(url:str) -> str:
