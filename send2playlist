@@ -1,5 +1,14 @@
 #!/usr/bin/env python3
 
+''' send2playlist is a script that takes an url of video straming services as a
+parameter. With this url, the script uses requests.get and re.search to grab
+the url's page title. With the url and title stored on memory it writes both to
+a playlist file. The titles on the playlist file serves the purpose of knowing
+at glance what videos are on the playlist. This script is used in conjunction
+with pdlnmpv. pdlnmpv is a dmenu and bash script with options to execute
+send2playlist, to check the contents of the playlist and to start playing the
+playlist with mpv, plus others. '''
+
 import sys
 from requests import get
 from re import search,sub,IGNORECASE
@@ -15,23 +24,20 @@ def get_title(url:str) -> str:
 
 def yewtube_to_youtube(url:str) -> str:
     ''' Converts yewtu.be url to youtube.com url to avoid any connection pro-
-    blem that yewtube might have on a random day .
-    Yewtu.be is an invidious instance, basically an alternative open source
-    front end to youtube.com. Anyone can host their own instance of invidious,
-    and many do.
-    This function can be used with any other invidious instances other than 
-    yewtu.be, but the original url must end in a valid youtube's url
-    '''
+    blem that yewtube might have on a random day . Yewtu.be is an invidious
+    instance, basically an alternative open source front end to youtube.com.
+    Anyone can host their own instance of invidious, and many do. This function
+    can be used with any other invidious instances other than yewtu.be, but the
+    original url must end in a valid youtube's url '''
     return f'https://youtube.com/{url.split("/")[-1]}'
 
 def clean_title(url:str) -> str:
-    ''' requests.get from google sites returns html with bad encoding in 
-    ISO-8859-1. So characters like ' and " are shown as &#39; and &quot;
-    I haven't found a solution to force the right utf-8 encoding so for now 
-    the script substitutes those two problems with their right character, 
-    using re.sub. Since a title can have simutaniously ' and ", the script 
-    uses two if statements instead of one if and one elif.
-    '''
+    ''' requests.get from google sites returns html with bad encoding in
+    ISO-8859-1. So characters like ' and " are shown as &#39; and &quot; I
+    haven't found a solution to force the right utf-8 encoding so for now the
+    script substitutes those two problems with their right character, using
+    re.sub. Since a title can have simutaniously ' and ", the script uses two
+    if statements instead of one if and one elif. '''
     if '&#39;' in url:
         url:str = sub('&#39;','\'',url)
     if '&quot;' in url:
