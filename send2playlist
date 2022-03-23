@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 
-''' send2playlist is a script that takes an url of video straming services as a
-parameter. With this url, the script uses requests.get and re.search to grab
-the url's page title. With the url and title stored on memory it writes both to
-a playlist file. The titles on the playlist file serves the purpose of knowing
-at glance what videos are on the playlist. This script is used in conjunction
-with pdlnmpv. pdlnmpv is a dmenu and bash script with options to execute
-send2playlist, to check the contents of the playlist and to start playing the
-playlist with mpv, plus others. '''
+''' Send2playlist is a script that takes the url of a video streaming service
+as a parameter. With this URL, the script uses requests.get and re.search to
+grab the URL's page title. With the URL and title stored in memory, it writes
+both to a playlist file. The titles on the playlist file serve the purpose of
+knowing at first glance what videos are on the playlist. This script is used in
+conjunction with pdlnmpv. pdlnmpv is a dmenu and bash script with options to
+execute send2playlist, check the contents of the playlist, and start playing
+the it with mpv, plus others.'''
 
 import sys
 from requests import get
@@ -46,7 +46,7 @@ def clean_title(url:str) -> str:
 
 if __name__ == '__main__':
 
-    # Gets the url that was parsed as an argument 
+    # Gets the url that was passed as an argument 
     url:str = sys.argv[1]
 
     if 'yewtu' in url:
