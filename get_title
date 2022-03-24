@@ -13,5 +13,7 @@ def get_title(url:str) -> str:
 
 if __name__ == '__main__':
 
-    print(get_title(argv[1]))
-
+    title = get_title(argv[1])
+    if title.endswith('- YouTube'):
+        title = title[:title.find('- YouTube')]
+    print(title)
