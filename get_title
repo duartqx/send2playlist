@@ -4,11 +4,12 @@ Get title for usage in my RSS scripts for newsboat
 '''
 
 from sys import argv
+from urllib.request import urlopen
 from re import search,IGNORECASE 
-from requests import get
 
 def get_title(url:str) -> str:
-    return search('<\W*title\W*(.*)</title', get(url).text, IGNORECASE).group(1)
+    content = urlopen(url).read().decode('UTF-8')
+    return search('<\W*title\W*(.*)</title', content, IGNORECASE).group(1)
 
 
 if __name__ == '__main__':
