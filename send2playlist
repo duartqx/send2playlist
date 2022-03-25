@@ -10,7 +10,7 @@ execute send2playlist, check the contents of the playlist, and start playing
 the it with mpv, plus others.'''
 
 import sys
-from urllib.request import urlopen
+from urllib.request import urlopen, Request
 from re import search,sub,IGNORECASE
 
 PLAYLIST_FILE='.local/share/playlist'
@@ -19,7 +19,10 @@ PLAYLIST_FILE='.local/share/playlist'
 def get_title(url:str) -> str:
     ''' urllib.request.urlopen is used to get the url html content. With
     re.search the script scrapes and finds the page's title '''
-    content = urlopen(url).read().decode('UTF-8')
+    # Request with headers was required because odysee links would throw 403
+    # error when urlopen tryied to open them
+    r = Request(url,headers={'User-Agent':'Mozilla/5.0'})
+    content = urlopen(r).read().decode('UTF-8')
     return search('<\W*title\W*(.*)</title', content, IGNORECASE).group(1)
 
 def yewtube_to_youtube(url:str) -> str:
