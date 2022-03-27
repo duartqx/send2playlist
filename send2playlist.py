@@ -9,21 +9,22 @@ conjunction with pdlnmpv. pdlnmpv is a dmenu and bash script with options to
 execute send2playlist, check the contents of the playlist, and start playing
 the it with mpv, plus others.'''
 
-import sys
+from sys import argv, exit as _exit
 from urllib.request import urlopen, Request
-from re import search,sub,IGNORECASE
+from re import search, sub
 
 PLAYLIST_FILE='.local/share/playlist'
 # The playlist file to be appended with open()
 
-def get_title(url:str) -> str:
+def get_title(url: str) -> str:
     ''' urllib.request.urlopen is used to get the url html content. With
     re.search the script scrapes and finds the page's title '''
     # Request with headers was required because odysee links would throw 403
     # error when urlopen tryied to open them
-    r = Request(url,headers={'User-Agent':'Mozilla/5.0'})
-    content = urlopen(r).read().decode('UTF-8')
-    return search('<\W*title\W*(.*)</title', content, IGNORECASE).group(1)
+    r: Response = Request(url, headers = {'User-Agent': 'Mozilla/5.0'})
+    content: str = urlopen(r).read().decode('UTF-8')
+    title: str = search('<\W*title\W*(.*)</title', content).group(1)
+    return title
 
 def yewtube_to_youtube(url:str) -> str:
     ''' Converts yewtu.be url to youtube.com url to avoid any connection pro-
@@ -34,18 +35,18 @@ def yewtube_to_youtube(url:str) -> str:
     original url must end in a valid youtube's url '''
     return f'https://youtube.com/{url.split("/")[-1]}'
 
-def clean_title(url:str) -> str:
+def clean_title(title: str) -> str:
     ''' requests from google sites returns html with bad encoding in
     ISO-8859-1. So characters like ' and " are shown as &#39; and &quot; I
     haven't found a solution to force the right utf-8 encoding so for now the
     script substitutes those two problems with their right character, using
     re.sub. Since a title can have simutaniously ' and ", the script uses two
     if statements instead of one if and one elif. '''
-    if '&#39;' in url:
-        url:str = sub('&#39;','\'',url)
+    if '&#39;' in title:
+        title: str = sub('&#39;', '\'', title)
     if '&quot;' in url:
-        url:str = sub('&quot;','\'',url)
-    return url
+        title: str = sub('&quot;', '\'', title)
+    return title
 
 if __name__ == '__main__':
 
