@@ -51,21 +51,21 @@ def clean_title(title: str) -> str:
 if __name__ == '__main__':
 
     # Gets the url that was passed as an argument 
-    url:str = sys.argv[1]
+    url: str = argv[1]
 
     if 'yewtu' in url:
-        url:str = yewtube_to_youtube(url)
+        url: str = yewtube_to_youtube(url)
 
     # Get's the title
-    title = get_title(url)
+    title: str = get_title(url)
     # Cleans it from bad encoding, if any
-    title = clean_title(title)
+    title: str = clean_title(title)
 
     if title.endswith('- YouTube'):
         # All youtube titles have '- Youtube' as a suffix, using find to get 
         # the index of were the suffix is and with this index slicing the str 
         # we clean the titles from it
-        title = title[:title.find('- YouTube')]
+        title: str = title[:title.find('- YouTube')]
    
     if title != 'YouTube':
     # First checks if the title is not just 'Youtube'
@@ -85,4 +85,4 @@ if __name__ == '__main__':
         # Exists with return value of 1 so that it can be captured by bash and
         # the script send2notify executes the notification of an error, or 
         # success if the url and title were appended to the playlist file
-        sys.exit(1)
+        _exit(1)
