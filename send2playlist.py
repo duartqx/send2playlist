@@ -12,19 +12,25 @@ the it with mpv, plus others.'''
 from sys import argv, exit as _exit
 from urllib.request import urlopen, Request
 from re import search, sub
+from typing import Optional, Match
 
 PLAYLIST_FILE='.local/share/playlist'
 # The playlist file to be appended with open()
+
+class NoTitleError(Exception): pass
 
 def get_title(url: str) -> str:
     ''' urllib.request.urlopen is used to get the url html content. With
     re.search the script scrapes and finds the page's title '''
     # Request with headers was required because odysee links would throw 403
     # error when urlopen tryied to open them
-    r: Response = Request(url, headers = {'User-Agent': 'Mozilla/5.0'})
+    r: Request = Request(url, headers = {'User-Agent': 'Mozilla/5.0'})
     content: str = urlopen(r).read().decode('UTF-8')
-    title: str = search('<\W*title\W*(.*)</title', content).group(1)
-    return title
+    title: Optional[Match[str]] = search('<\W*title\W*(.*)</title', content)
+    if title:
+        return title.group(1)
+    else:
+        raise NoTitleError
 
 def yewtube_to_youtube(url:str) -> str:
     ''' Converts yewtu.be url to youtube.com url to avoid any connection pro-
@@ -43,9 +49,9 @@ def clean_title(title: str) -> str:
     re.sub. Since a title can have simutaniously ' and ", the script uses two
     if statements instead of one if and one elif. '''
     if '&#39;' in title:
-        title: str = sub('&#39;', '\'', title)
+        title = sub('&#39;', '\'', title)
     if '&quot;' in url:
-        title: str = sub('&quot;', '\'', title)
+        title = sub('&quot;', '\'', title)
     return title
 
 if __name__ == '__main__':
@@ -54,18 +60,18 @@ if __name__ == '__main__':
     url: str = argv[1]
 
     if 'yewtu' in url:
-        url: str = yewtube_to_youtube(url)
+        url = yewtube_to_youtube(url)
 
     # Get's the title
     title: str = get_title(url)
     # Cleans it from bad encoding, if any
-    title: str = clean_title(title)
+    title = clean_title(title)
 
     if title.endswith('- YouTube'):
         # All youtube titles have '- Youtube' as a suffix, using find to get 
         # the index of were the suffix is and with this index slicing the str 
         # we clean the titles from it
-        title: str = title[:title.find('- YouTube')]
+        title = title[:title.find('- YouTube')]
    
     if title != 'YouTube':
     # First checks if the title is not just 'Youtube'
