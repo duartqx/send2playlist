@@ -14,6 +14,8 @@ case $1 in
     *)
         [[ ! $1 =~ $URL_regex ]] && exit 1
 
+        notify-send 'Sending to Playlist'
+
         send2playlist $1
         
         if [[ "$?" == "0" ]]; then
