@@ -1,4 +1,8 @@
-#!/bin/bash
+#!/usr/bin/env bash
+
+URL_regex='^(https?|ftp|file)://[-A-Za-z0-9\+&@#/%?=~_|!:,.;]*[-A-Za-z0-9\+&@#/%=~_|]\.[-A-Za-z0-9\+&@#/%?=~_|!:,.;]*[-A-Za-z0-9\+&@#/%=~_|]$'
+
+[[ ! $1 =~ $URL_regex ]] && exit 1
 
 send2playlist $1
 
