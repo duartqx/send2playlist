@@ -8,5 +8,5 @@ import send2playlist
 
 title: str = send2playlist.get_title(argv[1])
 if title.endswith('- YouTube'):
-    title: str = title[:title.find('- YouTube')]
+    title = title[:title.find('- YouTube')]
 print(title)
