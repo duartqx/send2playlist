@@ -11,12 +11,13 @@ pipedNotify() {
 case $1 in
     -p)
         pipedNotify ;;
-    *)
-        [[ ! $1 =~ $URL_regex ]] && exit 1
+    -s)
+        # If $1 == -s && $2 exists and is an URL Sends it to send2playlist
+        [[ -z $2 || ! $2 =~ $URL_regex ]] && exit 1
 
         notify-send -h "$XCPS" 'Sending to Playlist'
 
-        send2playlist $1
+        send2playlist $2
         
         if [[ "$?" == "0" ]]; then
             notify-send -h "$XCPS" -u low 'Sent to Playlist'
