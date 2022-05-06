@@ -12,7 +12,7 @@ XCPS='string:x-canonical-private-synchronous:SingleNotification'
 # window of the same name on screen.
 pipedNotify() {
     while read PipedNotification; do
-        notify-send -h "$XCPS" "$PipedNotification";
+        notify-send -h "$XCPS" -u critical "$PipedNotification";
     done
 }
 
@@ -30,8 +30,8 @@ case $1 in
         send2playlist $2
         
         if [[ "$?" == "0" ]]; then
-            notify-send -h "$XCPS" -u low 'Sent to Playlist'
+            notify-send -h "$XCPS" 'Sent to Playlist'
         else
-            notify-send -h "$XCPS" -u low 'Something went wrong'
+            notify-send -h "$XCPS" 'Something went wrong'
         fi
 esac

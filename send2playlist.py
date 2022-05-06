@@ -48,13 +48,11 @@ def clean_title(title: str) -> str:
     script substitutes those two problems with their right character, using
     re.sub. Since a title can have simutaniously ' and ", the script uses two
     if statements instead of one if and one elif. '''
-    if '&#39;' in title:
-        title = sub('&#39;', '\'', title)
-    if '&quot;' in url:
-        title = sub('&quot;', '\'', title)
+    while '&#39;' in title or '&quot;' in title:
+        title = sub('&#39;|&quot;', '\'', title)
     return title
 
-if __name__ == '__main__':
+def main() -> None:
 
     # Gets the url that was passed as an argument 
     url: str = argv[1]
@@ -92,3 +90,9 @@ if __name__ == '__main__':
         # the script send2notify executes the notification of an error, or 
         # success if the url and title were appended to the playlist file
         _exit(1)
+
+
+if __name__ == '__main__':
+
+    main()
+
