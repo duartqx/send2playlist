@@ -25,11 +25,14 @@ def get_title(url: str) -> str:
     # Request with headers was required because odysee links would throw 403
     # error when urlopen tryied to open them
     r: Request = Request(url, headers = {'User-Agent': 'Mozilla/5.0'})
-    content: str = urlopen(r).read().decode('UTF-8')
-    title: Optional[Match[str]] = search('<\W*title\W*(.*)</title', content)
-    if title:
-        return title.group(1)
-    else:
+    try:
+        content: str = urlopen(r).read().decode('UTF-8')
+        title: Optional[Match[str]] = search('<\W*title\W*(.*)</title', content)
+        if title:
+            return title.group(1)
+        else:
+            raise NoTitleError
+    except UnicodeDecodeError:
         raise NoTitleError
 
 def yewtube_to_youtube(url:str) -> str:
@@ -48,8 +51,8 @@ def clean_title(title: str) -> str:
     script substitutes those two problems with their right character, using
     re.sub. Since a title can have simutaniously ' and ", the script uses two
     if statements instead of one if and one elif. '''
-    while '&#39;' in title or '&quot;' in title:
-        title = sub('&#39;|&quot;', '\'', title)
+    for pattern, repl in zip(['&#39;|&quot;', '&amp;'], ['\'', '&']):
+        title = sub(pattern, repl, title)
     return title
 
 def main() -> None:
@@ -60,10 +63,8 @@ def main() -> None:
     if 'yewtu' in url:
         url = yewtube_to_youtube(url)
 
-    # Get's the title
-    title: str = get_title(url)
-    # Cleans it from bad encoding, if any
-    title = clean_title(title)
+    # Get's and cleans the title
+    title: str = clean_title(get_title(url))
 
     if title.endswith('- YouTube'):
         # All youtube titles have '- Youtube' as a suffix, using find to get 
@@ -94,5 +95,8 @@ def main() -> None:
 
 if __name__ == '__main__':
 
-    main()
+    try:
+        main()
+    except NoTitleError:
+        _exit(1)
 
