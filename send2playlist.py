@@ -14,10 +14,13 @@ from urllib.request import urlopen, Request
 from re import search, sub
 from typing import Optional, Match
 
+
 PLAYLIST_FILE='.local/share/playlist'
 # The playlist file to be appended with open()
 
+
 class NoTitleError(Exception): pass
+
 
 def get_title(url: str) -> str:
     ''' urllib.request.urlopen is used to get the url html content. With
@@ -35,6 +38,7 @@ def get_title(url: str) -> str:
     except UnicodeDecodeError:
         raise NoTitleError
 
+
 def yewtube_to_youtube(url:str) -> str:
     ''' Converts yewtu.be url to youtube.com url to avoid any connection pro-
     blem that yewtube might have on a random day . Yewtu.be is an invidious
@@ -43,6 +47,7 @@ def yewtube_to_youtube(url:str) -> str:
     can be used with any other invidious instances other than yewtu.be, but the
     original url must end in a valid youtube's url '''
     return f'https://youtube.com/{url.split("/")[-1]}'
+
 
 def clean_title(title: str) -> str:
     ''' requests from google sites returns html with bad encoding in
@@ -54,6 +59,7 @@ def clean_title(title: str) -> str:
     for pattern, repl in zip(['&#39;|&quot;', '&amp;'], ['\'', '&']):
         title = sub(pattern, repl, title)
     return title
+
 
 def main() -> None:
 
