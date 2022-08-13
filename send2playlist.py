@@ -30,7 +30,7 @@ def get_title(url: str) -> str:
     r: Request = Request(url, headers = {'User-Agent': 'Mozilla/5.0'})
     try:
         content: str = urlopen(r).read().decode('UTF-8')
-        title: Optional[Match[str]] = search('<\W*title\W*(.*)</title', content)
+        title: Match[str] = search('<\W*title\W*(.*)</title', content)
         if title:
             return title.group(1)
         else:
