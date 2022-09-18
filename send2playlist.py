@@ -12,7 +12,7 @@ the it with mpv, plus others.'''
 from sys import argv, exit as _exit
 from urllib.request import urlopen, Request
 from re import search, sub
-from typing import Optional, Match
+from typing import Match
 
 
 PLAYLIST_FILE='.local/share/playlist'
@@ -30,7 +30,7 @@ def get_title(url: str) -> str:
     r: Request = Request(url, headers = {'User-Agent': 'Mozilla/5.0'})
     try:
         content: str = urlopen(r).read().decode('UTF-8')
-        title: Match[str] = search('<\W*title\W*(.*)</title', content)
+        title: Match[str] | None = search(r'<\W*title\W*(.*)</title', content)
         if title:
             return title.group(1)
         else:
@@ -39,7 +39,7 @@ def get_title(url: str) -> str:
         raise NoTitleError
 
 
-def yewtube_to_youtube(url:str) -> str:
+def yewtube_to_youtube(url: str) -> str:
     ''' Converts yewtu.be url to youtube.com url to avoid any connection pro-
     blem that yewtube might have on a random day . Yewtu.be is an invidious
     instance, basically an alternative open source front end to youtube.com.
@@ -64,7 +64,11 @@ def clean_title(title: str) -> str:
 def main() -> None:
 
     # Gets the url that was passed as an argument 
-    url: str = argv[1]
+    if len(argv) > 1:
+        url: str = argv[1]
+    else:
+        print('You need to pass an url as first argument!')
+        _exit(1)
 
     if 'yewtu' in url:
         url = yewtube_to_youtube(url)
@@ -105,4 +109,3 @@ if __name__ == '__main__':
         main()
     except NoTitleError:
         _exit(1)
-
