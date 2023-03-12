@@ -12,26 +12,28 @@ XCPS='string:x-canonical-private-synchronous:SingleNotification'
 # window of the same name on screen.
 pipedNotify() {
     while read PipedNotification; do
-        notify-send -h "$XCPS" -u critical "$PipedNotification";
+        notify-send -h "$XCPS" -u critical "$PipedNotification"
     done
 }
 
 case $1 in
-    -p)
-        pipedNotify ;;
-    -s)
-        # If $1 == -s && $2 ins't an empty string and is an URL by checking via
-        # the regex operator =~ if all these tests pass $2 is sent to
-        # send2playlist
-        [[ -z $2 || ! $2 =~ $URL_regex ]] && exit 1
+-p)
+    pipedNotify
+    ;;
+-s)
+    # If $1 == -s && $2 ins't an empty string and is an URL by checking via
+    # the regex operator =~ if all these tests pass $2 is sent to
+    # send2playlist
+    [[ -z $2 || ! $2 =~ $URL_regex ]] && exit 1
 
-        notify-send -h "$XCPS" 'Sending to Playlist'
+    notify-send -h "$XCPS" 'Sending to Playlist'
 
-        send2playlist $2
-        
-        if [[ "$?" == "0" ]]; then
-            notify-send -h "$XCPS" 'Sent to Playlist'
-        else
-            notify-send -h "$XCPS" 'Something went wrong'
-        fi
+    if send2playlist "$2"; then
+        MSG='Sent to Playlist'
+    else
+        MSG='Something went wrong'
+    fi
+
+    notify-send -h "$XCPS" "$MSG"
+    ;;
 esac
