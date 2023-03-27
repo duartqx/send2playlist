@@ -4,7 +4,7 @@
 as a parameter. With this URL, the script uses requests.get and re.search to
 grab the URL's page title. With the URL and title stored in memory, it writes
 both to a playlist file. The titles on the playlist file serve the purpose of
-knowing at first glance what videos are on the playlist. This script is used in
+knowing at first glance what videos are on the playlist. This script is used in
 conjunction with pdlnmpv. pdlnmpv is a dmenu and bash script with options to
 execute send2playlist, check the contents of the playlist, and start playing
 the it with mpv, plus others."""
@@ -87,9 +87,10 @@ def main() -> None:
         # First checks if the title is not just 'Youtube'
         # (If it is just 'Youtube' it means the video had a problem, like a url
         # still marked as premiere or a live stream link to youtube that hasn't
-        # started yet. So these kinds of links would fail silently and just send a
-        # 'Youtube' as their title)
-        # only after this check the title and url is written to the playlist file
+        # started yet. So these kinds of links would fail silently and just
+        # send a 'Youtube' as their title)
+        # only after this check the title and url is written to the playlist
+        # file
 
         with open(PLAYLIST_FILE, "a") as fh:
             # Appends title + url + newline to the playlist file
