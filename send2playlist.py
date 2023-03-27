@@ -96,7 +96,7 @@ def main() -> None:
             # If the file doens't exists open() with the 'a' arg creates and
             # writes the new file, if it exists open() + fh.write appends the
             # title + url to the end of the file
-            fh.write(f"{title} - {url}\n")
+            fh.write(f"{title.strip()} - {url}\n")
     else:
         # Exists with return value of 1 so that it can be captured by bash and
         # the script send2notify executes the notification of an error, or
