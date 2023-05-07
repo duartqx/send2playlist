@@ -9,14 +9,12 @@ conjunction with pdlnmpv. pdlnmpv is a dmenu and bash script with options to
 execute send2playlist, check the contents of the playlist, and start playing
 the it with mpv, plus others."""
 
-from sys import argv, exit as _exit
-from urllib.request import urlopen, Request
+from argparse import ArgumentParser, Namespace
 from re import search, sub
-from typing import Match
-
-
-PLAYLIST_FILE = ".local/share/playlist"
-# The playlist file to be appended with open()
+from typing import Match, List
+from urllib.request import urlopen, Request
+import os
+import sys
 
 
 class NoTitleError(Exception):
@@ -28,9 +26,9 @@ def get_title(url: str) -> str:
     re.search the script scrapes and finds the page's title"""
     # Request with headers was required because odysee links would throw 403
     # error when urlopen tryied to open them
-    r: Request = Request(url, headers={"User-Agent": "Mozilla/5.0"})
+    r = Request(url, headers={"User-Agent": "Mozilla/5.0"})
     try:
-        content: str = urlopen(r).read().decode("UTF-8")
+        content: str = urlopen(r).read().decode()
         title: Match[str] | None = search(r"<\W*title\W*(.*)</title", content)
         if title:
             return title.group(1)
@@ -57,57 +55,81 @@ def clean_title(title: str) -> str:
     script substitutes those two problems with their right character, using
     re.sub. Since a title can have simutaniously ' and ", the script uses two
     if statements instead of one if and one elif."""
-    for pattern, repl in zip(["&#39;|&quot;", "&amp;"], ["'", "&"]):
+    for pattern, repl in {"&#39;|&quot;": "'", "&amp;": "&"}.items():
         title = sub(pattern, repl, title)
     return title
 
 
+def get_args() -> Namespace:
+
+    parser = ArgumentParser(prog="send2playlist")
+    options = [
+        {
+            "opt": ("urls",),
+            "type": str,
+            "nargs": "+",
+            "help": "Urls to send to playlist",
+        },
+        {
+            "opt": ("-p", "--playlist"),
+            "help": "Urls to send to playlist",
+            "default": os.environ["HOME"] + "/.local/share/playlist",
+        },
+    ]
+    for option in options:
+        parser.add_argument(*option.pop("opt"), **option)  # type: ignore
+    return parser.parse_args()
+
+
 def main() -> None:
 
-    # Gets the url that was passed as an argument
-    if len(argv) > 1:
-        url: str = argv[1]
-    else:
-        print("You need to pass an url as first argument!")
-        _exit(1)
+    args: Namespace = get_args()
 
-    if "yewtu" in url:
-        url = yewtube_to_youtube(url)
+    lines: List[str] = []
 
-    # Get's and cleans the title
-    title: str = clean_title(get_title(url))
+    for url in args.urls:
 
-    if title.endswith("- YouTube"):
-        # All youtube titles have '- Youtube' as a suffix, using find to get
-        # the index of were the suffix is and with this index slicing the str
-        # we clean the titles from it
-        title = title[: title.find("- YouTube")]
+        # url: str
 
-    if title != "YouTube":
-        # First checks if the title is not just 'Youtube'
-        # (If it is just 'Youtube' it means the video had a problem, like a url
-        # still marked as premiere or a live stream link to youtube that hasn't
-        # started yet. So these kinds of links would fail silently and just
-        # send a 'Youtube' as their title)
-        # only after this check the title and url is written to the playlist
-        # file
+        if "&pp=" in url:
+            url = url[: url.find("&pp=")]
 
-        with open(PLAYLIST_FILE, "a") as fh:
+        if "yewtu" in url:
+            url = yewtube_to_youtube(url)
+
+        try:
+            # Get's and cleans the title
+            title: str = clean_title(get_title(url))
+        except NoTitleError:
+            continue
+
+        if title.endswith("- YouTube"):
+            # All youtube titles have '- Youtube' as a suffix, using find to get
+            # the index of were the suffix is and with this index slicing the str
+            # we clean the titles from it
+            title = title[: title.find("- YouTube")]
+
+        if title != "YouTube":
+            # First checks if the title is not just 'Youtube'
+            # (If it is just 'Youtube' it means the video had a problem, like a url
+            # still marked as premiere or a live stream link to youtube that hasn't
+            # started yet. So these kinds of links would fail silently and just
+            # send a 'Youtube' as their title)
+            # only after this check the title and url is appended to lines
+            lines.append(f"{title.strip()} - {url}\n")
+
+    if lines:
+        with open(args.playlist, "a") as fh:
             # Appends title + url + newline to the playlist file
             # If the file doens't exists open() with the 'a' arg creates and
             # writes the new file, if it exists open() + fh.write appends the
             # title + url to the end of the file
-            fh.write(f"{title.strip()} - {url}\n")
+            fh.write("".join(lines))
     else:
-        # Exists with return value of 1 so that it can be captured by bash and
-        # the script send2notify executes the notification of an error, or
-        # success if the url and title were appended to the playlist file
-        _exit(1)
+        # Exit with return value of 1 to let bash know something went wrong
+        sys.exit(1)
 
 
 if __name__ == "__main__":
 
-    try:
-        main()
-    except NoTitleError:
-        _exit(1)
+    main()
