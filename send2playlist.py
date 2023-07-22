@@ -30,7 +30,12 @@ def get_title(url: str) -> str:
     try:
         content: str = urlopen(r).read().decode()
         title: Match[str] | None = search(r"<\W*title\W*(.*)</title", content)
-        if title:
+        channel_name: Match[str] | None = search(
+                r'<link itemprop="name" content="([^"]*)">', content
+        )
+        if title and channel_name:
+            return f"{channel_name.group(1)} | {title.group(1)}"
+        elif title:
             return title.group(1)
         else:
             raise NoTitleError
