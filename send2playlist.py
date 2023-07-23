@@ -21,20 +21,45 @@ class NoTitleError(Exception):
     pass
 
 
+def get_channel_name(url: str, content: str) -> str:
+    """
+    Scrapes a decoded content of a GET request result and scrapes the channel
+    name from it using regex
+    """
+    channel_name: str = ""
+    channel_name_match: Match[str] | None = None
+
+    if "youtube" in url:
+        channel_name_match = search(
+            r'<link itemprop="name" content="([^"]*)">', content
+        )
+    elif "odysee" in url:
+        channel_name_match = search(
+            r'"author": {\n    "@type": "Person",\n    "name": "([^"]*)',
+            content,
+        )
+
+    if channel_name_match:
+        channel_name = channel_name_match.group(1)
+
+    return channel_name
+
+
 def get_title(url: str) -> str:
-    """urllib.request.urlopen is used to get the url html content. With
-    re.search the script scrapes and finds the page's title"""
+    """
+    Makes a GET request to the url and scrapes the page title and channel name
+    """
     # Request with headers was required because odysee links would throw 403
     # error when urlopen tryied to open them
     r = Request(url, headers={"User-Agent": "Mozilla/5.0"})
     try:
         content: str = urlopen(r).read().decode()
         title: Match[str] | None = search(r"<\W*title\W*(.*)</title", content)
-        channel_name: Match[str] | None = search(
-                r'<link itemprop="name" content="([^"]*)">', content
-        )
+
+        channel_name: str = get_channel_name(url, content)
+
         if title and channel_name:
-            return f"{channel_name.group(1)} | {title.group(1)}"
+            return f"{channel_name} | {title.group(1)}"
         elif title:
             return title.group(1)
         else:
@@ -44,29 +69,34 @@ def get_title(url: str) -> str:
 
 
 def yewtube_to_youtube(url: str) -> str:
-    """Converts yewtu.be url to youtube.com url to avoid any connection pro-
-    blem that yewtube might have on a random day . Yewtu.be is an invidious
-    instance, basically an alternative open source front end to youtube.com.
-    Anyone can host their own instance of invidious, and many do. This function
-    can be used with any other invidious instances other than yewtu.be, but the
-    original url must end in a valid youtube's url"""
+    """
+    Converts yewtu.be urls to youtube.com
+
+    Avoid any connection problems that yewtube might have on a random day.
+    Yewtu.be is an invidious instance, basically an alternative open source
+    front end to youtube.com.
+
+    """
     return f'https://youtube.com/{url.split("/")[-1]}'
 
 
 def clean_title(title: str) -> str:
-    """requests from google sites returns html with bad encoding in
+    """
+    Cleans out bad encoding on quotation marks
+
+    Requests from google sites returns html with bad encoding in
     ISO-8859-1. So characters like ' and " are shown as &#39; and &quot; I
     haven't found a solution to force the right utf-8 encoding so for now the
     script substitutes those two problems with their right character, using
     re.sub. Since a title can have simutaniously ' and ", the script uses two
-    if statements instead of one if and one elif."""
+    if statements instead of one if and one elif.
+    """
     for pattern, repl in {"&#39;|&quot;": "'", "&amp;": "&"}.items():
         title = sub(pattern, repl, title)
     return title
 
 
 def get_args() -> Namespace:
-
     parser = ArgumentParser(prog="send2playlist")
     options = [
         {
@@ -87,13 +117,11 @@ def get_args() -> Namespace:
 
 
 def main() -> None:
-
     args: Namespace = get_args()
 
     lines: List[str] = []
 
     for url in args.urls:
-
         # url: str
 
         if "&pp=" in url:
@@ -110,17 +138,17 @@ def main() -> None:
 
         if title.endswith("- YouTube"):
             # All youtube titles have '- Youtube' as a suffix, using find to get
-            # the index of were the suffix is and with this index slicing the str
-            # we clean the titles from it
+            # the index of were the suffix is and with this index slicing the
+            # str we clean the titles from it
             title = title[: title.find("- YouTube")]
 
         if title != "YouTube":
             # First checks if the title is not just 'Youtube'
-            # (If it is just 'Youtube' it means the video had a problem, like a url
-            # still marked as premiere or a live stream link to youtube that hasn't
-            # started yet. So these kinds of links would fail silently and just
-            # send a 'Youtube' as their title)
-            # only after this check the title and url is appended to lines
+            # (If it is just 'Youtube' it means the video had a problem, like a
+            # url still marked as premiere or a live stream link to youtube that
+            # hasn't started yet. So these kinds of links would fail silently
+            # and just send a 'Youtube' as their title) only after this check
+            # the title and url is appended to lines
             lines.append(f"{title.strip()} - {url}\n")
 
     if lines:
@@ -136,5 +164,4 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-
     main()
