@@ -16,6 +16,13 @@ pipedNotify() {
     done
 }
 
+if [[ -z $(pgrep dunst) ]]; then
+    # Starts dunst if is not running already and makes sure xfce4-notifyd is
+    # not running
+    systemctl --user stop xfce4-notifyd
+    dunst &
+fi
+
 case $1 in
 -p)
     pipedNotify
@@ -26,14 +33,17 @@ case $1 in
     # send2playlist
     [[ -z $2 || ! $2 =~ $URL_regex ]] && exit 1
 
-    notify-send -h "$XCPS" 'Sending to Playlist'
+    notify-send -h "$XCPS" "Sending to Playlist"
 
     if send2playlist "$2"; then
-        MSG='Sent to Playlist'
+        MSG="Sent to Playlist"
     else
-        MSG='Something went wrong'
+        MSG="Something went wrong"
     fi
 
     notify-send -h "$XCPS" "$MSG"
     ;;
+*)
+    echo $@
+    notify-send "$@"
 esac
